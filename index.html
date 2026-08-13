@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教育部(獎)補助經費統計分析儀表板</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js 4.4.1 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- SheetJS (XLSX Export) CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="app-layout">
+      
+      <!-- ===================================================================
+           LEFT SIDEBAR (左側導覽與標題列)
+           =================================================================== -->
+      <aside class="app-sidebar glass-card">
+        <div>
+          <!-- Brand Section -->
+          <div class="brand-section">
+            <div class="brand-header-row">
+              <div class="brand-icon">
+                <i class="fa-solid fa-chart-pie"></i>
+              </div>
+              <h1 class="brand-title">教育部(獎)補助經費<br>統計分析儀表板</h1>
+            </div>
+            
+            <div style="margin-top: 6px;">
+              <span class="status-badge"><i class="fa-solid fa-circle-check"></i> 經費單位：新台幣元</span>
+            </div>
+          </div>
+
+          <!-- Left Vertical Navigation Menu -->
+          <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="switchTab('ranking')">
+              <i class="fa-solid fa-chart-bar text-blue"></i>
+              <span>各校核定金額排行榜</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('pivot')">
+              <i class="fa-solid fa-table-cells text-emerald"></i>
+              <span>核定金額交叉報表</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('detail')">
+              <i class="fa-solid fa-table-list text-purple"></i>
+              <span>明細資料表格</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('school')">
+              <i class="fa-solid fa-chart-line text-amber"></i>
+              <span>單校歷年變動趨勢</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <footer class="sidebar-footer">
+          <p>教育部(獎)補助經費統計分析系統 &copy; 2026<br>涵蓋私校獎補助與高教深耕計畫</p>
+        </footer>
+      </aside>
+
+      <!-- ===================================================================
+           RIGHT MAIN CONTENT (右側主內容區)
+           =================================================================== -->
+      <main class="app-main-content">
+        
+        <!-- TAB 1: RANKING CHART (各校核定金額排行榜 - 堆疊柱狀圖) -->
+        <div id="tabPaneRanking" class="tab-pane active">
+          <div class="glass-card">
+            
+            <!-- Tab 1 Independent Filter Bar -->
+            <div class="tab-filter-bar">
+              <!-- Line 1: Project Filter Separate Line (計畫別獨立一行) -->
+              <div class="filter-row-project">
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-solid fa-folder-open text-blue"></i> 計畫別篩選：</span>
+                  <div class="segmented-control" id="projSegmented_ranking">
+                    <button type="button" class="segmented-btn active" data-value="all" onclick="setProjectFilter('ranking', 'all')">全部計畫</button>
+                    <button type="button" class="segmented-btn" data-value="私校獎補助計畫" onclick="setProjectFilter('ranking', '私校獎補助計畫')">私校獎補助計畫</button>
+                    <button type="button" class="segmented-btn" data-value="高教深耕計畫" onclick="setProjectFilter('ranking', '高教深耕計畫')">高教深耕計畫</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Line 2: Other Filters (Year, Category, TopN, Sort) -->
+              <div class="filter-row-options">
+                <!-- 1. Year Filter (Multi-select Dropdown) -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-regular fa-calendar-days text-purple"></i> 年度：</span>
+                  <div class="custom-dropdown" id="dropdownYear_ranking">
+                    <button type="button" class="dropdown-toggle-btn" onclick="toggleDropdown('dropdownYear_ranking')">
+                      <span id="dropdownLabel_ranking">預設 114 年</span>
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                      <div class="dropdown-header">
+                        <button type="button" class="small-link" onclick="selectAllYearsInTab('ranking', true)">全選</button>
+                        <button type="button" class="small-link" onclick="selectAllYearsInTab('ranking', false)">全清</button>
+                      </div>
+                      <div id="checkboxesYear_ranking">
+                        <!-- Dynamic checkboxes (Descending order) -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Category Filter -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組：</span>
+                  <select id="rankingCatSelect" class="form-select" onchange="renderRankingChart()">
+                    <option value="綜合大學一" selected>綜合大學一</option>
+                    <option value="綜合大學二">綜合大學二</option>
+                    <option value="醫學類組">醫學類組</option>
+                    <option value="宗教研修學院">宗教研修學院</option>
+                    <option value="停辦">停辦</option>
+                    <option value="公立">公立</option>
+                    <option value="all">全部類組</option>
+                  </select>
+                </div>
+
+                <!-- 3. Top N -->
+                <div class="filter-item">
+                  <span class="filter-item-label">顯示校數：</span>
+                  <select id="rankingTopNSelect" class="form-select" onchange="renderRankingChart()">
+                    <option value="10">Top 10 學校</option>
+                    <option value="20" selected>Top 20 學校</option>
+                    <option value="30">Top 30 學校</option>
+                    <option value="50">Top 50 學校</option>
+                    <option value="all">全部學校</option>
+                  </select>
+                </div>
+
+                <!-- 4. Sort Order -->
+                <div class="filter-item">
+                  <span class="filter-item-label">排序：</span>
+                  <select id="rankingSortOrder" class="form-select" onchange="renderRankingChart()">
+                    <option value="desc" selected>金額由高至低</option>
+                    <option value="asc">金額由低至高</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart Area -->
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-chart-bar text-blue"></i> 各校核定金額排行榜 (堆疊橫向柱狀圖)
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">
+                  ( 🟦 私校獎補助計畫 / 🟩 高教深耕計畫 )
+                </span>
+              </div>
+            </div>
+            
+            <div class="chart-container" style="height: 560px;">
+              <canvas id="rankingChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: CROSS-TABULATION PIVOT TABLE (核定金額交叉報表) -->
+        <div id="tabPanePivot" class="tab-pane">
+          <div class="glass-card">
+            
+            <!-- Tab 2 Independent Filter Bar -->
+            <div class="tab-filter-bar">
+              <div class="filter-row-options">
+                <!-- Year Filter -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-regular fa-calendar-days text-purple"></i> 年度：</span>
+                  <div class="custom-dropdown" id="dropdownYear_pivot">
+                    <button type="button" class="dropdown-toggle-btn" onclick="toggleDropdown('dropdownYear_pivot')">
+                      <span id="dropdownLabel_pivot">預設 114 年</span>
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                      <div class="dropdown-header">
+                        <button type="button" class="small-link" onclick="selectAllYearsInTab('pivot', true)">全選</button>
+                        <button type="button" class="small-link" onclick="selectAllYearsInTab('pivot', false)">全清</button>
+                      </div>
+                      <div id="checkboxesYear_pivot">
+                        <!-- Dynamic checkboxes -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組：</span>
+                  <select id="pivotCatSelect" class="form-select" onchange="renderPivotTables()">
+                    <option value="綜合大學一" selected>綜合大學一</option>
+                    <option value="綜合大學二">綜合大學二</option>
+                    <option value="醫學類組">醫學類組</option>
+                    <option value="宗教研修學院">宗教研修學院</option>
+                    <option value="停辦">停辦</option>
+                    <option value="公立">公立</option>
+                    <option value="all">全部類組</option>
+                  </select>
+                </div>
+
+                <!-- Search Input -->
+                <div class="filter-item" style="flex-grow: 1; max-width: 320px;">
+                  <input type="text" id="pivotSearchInput" class="form-input" style="width: 100%;" placeholder="搜尋學校名稱/類組..." oninput="renderPivotTables()">
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 1: 私校獎補助計畫 交叉報表 -->
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-table-cells text-blue"></i> 【私校獎補助計畫】核定金額交叉報表
+              </div>
+              <button class="btn btn-emerald" onclick="exportPivotExcel('私校獎補助計畫')">
+                <i class="fa-solid fa-file-excel"></i> 匯出私校獎補助交叉報表 (Excel)
+              </button>
+            </div>
+            <div class="table-responsive" style="margin-bottom: 32px;">
+              <table id="pivotTable_private" class="pivot-table">
+                <!-- Dynamically populated via JS -->
+              </table>
+            </div>
+
+            <!-- Section 2: 高教深耕計畫 交叉報表 -->
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-table-cells text-emerald"></i> 【高教深耕計畫】核定金額交叉報表
+              </div>
+              <button class="btn btn-emerald" onclick="exportPivotExcel('高教深耕計畫')">
+                <i class="fa-solid fa-file-excel"></i> 匯出高教深耕交叉報表 (Excel)
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table id="pivotTable_sprout" class="pivot-table">
+                <!-- Dynamically populated via JS -->
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TAB 3: DETAILED DATA TABLE (明細資料表格) -->
+        <div id="tabPaneDetail" class="tab-pane">
+          <div class="glass-card">
+            
+            <!-- Tab 3 Independent Filter Bar -->
+            <div class="tab-filter-bar">
+              <!-- Line 1: Project Filter Separate Line (計畫別獨立一行) -->
+              <div class="filter-row-project">
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-solid fa-folder-open text-blue"></i> 計畫別篩選：</span>
+                  <div class="segmented-control" id="projSegmented_detail">
+                    <button type="button" class="segmented-btn active" data-value="all" onclick="setProjectFilter('detail', 'all')">全部計畫</button>
+                    <button type="button" class="segmented-btn" data-value="私校獎補助計畫" onclick="setProjectFilter('detail', '私校獎補助計畫')">私校獎補助計畫</button>
+                    <button type="button" class="segmented-btn" data-value="高教深耕計畫" onclick="setProjectFilter('detail', '高教深耕計畫')">高教深耕計畫</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Line 2: Other Filters -->
+              <div class="filter-row-options">
+                <!-- Year Filter -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-regular fa-calendar-days text-purple"></i> 年度：</span>
+                  <div class="custom-dropdown" id="dropdownYear_detail">
+                    <button type="button" class="dropdown-toggle-btn" onclick="toggleDropdown('dropdownYear_detail')">
+                      <span id="dropdownLabel_detail">預設 114 年</span>
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                      <div class="dropdown-header">
+                        <button type="button" class="small-link" onclick="selectAllYearsInTab('detail', true)">全選</button>
+                        <button type="button" class="small-link" onclick="selectAllYearsInTab('detail', false)">全清</button>
+                      </div>
+                      <div id="checkboxesYear_detail">
+                        <!-- Dynamic checkboxes -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組：</span>
+                  <select id="detailCatSelect" class="form-select" onchange="onDetailSearchInput()">
+                    <option value="綜合大學一" selected>綜合大學一</option>
+                    <option value="綜合大學二">綜合大學二</option>
+                    <option value="醫學類組">醫學類組</option>
+                    <option value="宗教研修學院">宗教研修學院</option>
+                    <option value="停辦">停辦</option>
+                    <option value="公立">公立</option>
+                    <option value="all">全部類組</option>
+                  </select>
+                </div>
+
+                <!-- Search Input -->
+                <div class="filter-item" style="flex-grow: 1; max-width: 280px;">
+                  <input type="text" id="detailSearchInput" class="form-input" style="width: 100%;" placeholder="搜尋學校/類組/計畫..." oninput="onDetailSearchInput()">
+                </div>
+              </div>
+            </div>
+
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-list-check text-emerald"></i> 補助明細資料庫
+              </div>
+              
+              <div class="card-actions">
+                <select id="pageSizeSelect" class="form-select" onchange="onPageSizeChange()">
+                  <option value="10">每頁 10 筆</option>
+                  <option value="25" selected>每頁 25 筆</option>
+                  <option value="50">每頁 50 筆</option>
+                  <option value="100">每頁 100 筆</option>
+                  <option value="-1">顯示全部筆數</option>
+                </select>
+
+                <button class="btn btn-emerald" onclick="exportDetailExcel()">
+                  <i class="fa-solid fa-file-excel"></i> 匯出 Excel
+                </button>
+                <button class="btn btn-outline" onclick="exportDetailCSV()">
+                  <i class="fa-solid fa-file-csv"></i> 匯出 CSV
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="detailTable">
+                <thead>
+                  <tr>
+                    <th class="sortable" onclick="handleDetailSort('year')">
+                      年度 <i id="sortIcon_year" class="fa-solid fa-sort"></i>
+                    </th>
+                    <th class="sortable" onclick="handleDetailSort('school')">
+                      學校名稱 <i id="sortIcon_school" class="fa-solid fa-sort"></i>
+                    </th>
+                    <th class="sortable" onclick="handleDetailSort('category')">
+                      私校類組 <i id="sortIcon_category" class="fa-solid fa-sort"></i>
+                    </th>
+                    <th class="sortable" onclick="handleDetailSort('project')">
+                      計畫別 <i id="sortIcon_project" class="fa-solid fa-sort"></i>
+                    </th>
+                    <th class="sortable num-cell" onclick="handleDetailSort('amount')">
+                      核定金額 <i id="sortIcon_amount" class="fa-solid fa-sort"></i>
+                    </th>
+                    <th style="text-align: center;">歷年趨勢連結</th>
+                  </tr>
+                </thead>
+                <tbody id="detailTableBody">
+                  <!-- Dynamically populated via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-footer">
+              <div id="detailTableInfo" class="table-info">
+                顯示第 1 至 25 筆，共 0 筆資料
+              </div>
+              <div id="detailPagination" class="pagination">
+                <!-- Dynamic page buttons -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: SINGLE SCHOOL TREND ANALYSIS (單校歷年變動趨勢) -->
+        <div id="tabPaneSchool" class="tab-pane">
+          <div class="glass-card" style="margin-bottom: 24px;">
+            
+            <!-- Tab 4 Filter Bar -->
+            <div class="tab-filter-bar">
+              <div class="filter-row-options">
+                <!-- Category Filter for Single School -->
+                <div class="filter-item">
+                  <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組篩選：</span>
+                  <select id="schoolCatSelect" class="form-select" onchange="onSchoolCategoryChange()">
+                    <option value="綜合大學一" selected>綜合大學一</option>
+                    <option value="綜合大學二">綜合大學二</option>
+                    <option value="醫學類組">醫學類組</option>
+                    <option value="宗教研修學院">宗教研修學院</option>
+                    <option value="停辦">停辦</option>
+                    <option value="公立">公立</option>
+                    <option value="all">全部類組</option>
+                  </select>
+                </div>
+
+                <!-- Linked School Select -->
+                <div class="filter-item" style="flex-grow: 1; max-width: 420px;">
+                  <span class="filter-item-label"><i class="fa-solid fa-graduation-cap text-amber"></i> 目標學校：</span>
+                  <select id="schoolSelect" class="form-select" style="width: 100%;" onchange="onSchoolSelectChange()">
+                    <!-- Dynamic linked school options -->
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Single School Historical Trend Chart -->
+            <div class="card-title-bar" style="margin-top: 10px;">
+              <div class="card-title" style="font-size: 16px;">
+                <i class="fa-solid fa-chart-line text-blue"></i>
+                <span id="schoolChartTitle">單校歷年金額變動趨勢圖</span>
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">
+                  ( 🟦 私校獎補助計畫 / 🟩 高教深耕計畫 / 🟧 全計畫總計 )
+                </span>
+              </div>
+            </div>
+            
+            <div class="chart-container" style="height: 440px;">
+              <canvas id="schoolTrendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Single School Detail Tables Separated by Project Type -->
+          <div class="glass-card">
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-table text-emerald"></i>
+                <span id="schoolTableMainTitle">單校歷年核定金額明細與年增減分析 (依計畫別分開呈現)</span>
+              </div>
+              
+              <div class="card-actions">
+                <button class="btn btn-emerald" onclick="exportSchoolExcel()">
+                  <i class="fa-solid fa-file-excel"></i> 匯出該校 Excel
+                </button>
+                <button class="btn btn-outline" onclick="exportSchoolCSV()">
+                  <i class="fa-solid fa-file-csv"></i> 匯出該校 CSV
+                </button>
+              </div>
+            </div>
+
+            <!-- Section 1: 私校獎補助計畫 歷年明細與增減分析 -->
+            <div class="section-subtitle">
+              <i class="fa-solid fa-circle-check text-blue"></i> 【私校獎補助計畫】歷年核定金額與增減分析
+            </div>
+            <div class="table-responsive" style="margin-bottom: 24px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>年度</th>
+                    <th>私校類組</th>
+                    <th class="num-cell">核定金額</th>
+                    <th class="num-cell">較前一年增減金額</th>
+                    <th class="num-cell">較前一年增減比率</th>
+                  </tr>
+                </thead>
+                <tbody id="schoolTableBody_private">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Section 2: 高教深耕計畫 歷年明細與增減分析 -->
+            <div class="section-subtitle">
+              <i class="fa-solid fa-circle-check text-emerald"></i> 【高教深耕計畫】歷年核定金額與增減分析
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>年度</th>
+                    <th>私校類組</th>
+                    <th class="num-cell">核定金額</th>
+                    <th class="num-cell">較前一年增減金額</th>
+                    <th class="num-cell">較前一年增減比率</th>
+                  </tr>
+                </thead>
+                <tbody id="schoolTableBody_sprout">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Load Data File -->
+  <script src="data.js"></script>
+  <!-- Load Main Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
