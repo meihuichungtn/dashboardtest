@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>教育部(獎)補助經費統計分析儀表板</title>
   
-  <!-- CSS Stylesheets -->
-  <link rel="stylesheet" href="styles.css">
-  
   <!-- FontAwesome Icons CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
@@ -16,6 +13,684 @@
   
   <!-- SheetJS (XLSX Export) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Embedded Stylesheet (styles.css) -->
+  <style>
+/* ==========================================================================
+   教育部(獎)補助經費統計分析儀表板 - Stylesheet
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+
+:root {
+  /* Light Theme Color Tokens */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-hover: rgba(241, 245, 249, 0.95);
+  --bg-input: #f1f5f9;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.2);
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-dim: #94a3b8;
+
+  /* Theme Accents */
+  --accent-primary: #3b82f6;       /* 私校獎補助 - 藍色 */
+  --accent-primary-hover: #2563eb;
+  --accent-primary-glow: rgba(59, 130, 246, 0.15);
+  
+  --accent-emerald: #10b981;       /* 高教深耕 - 綠色 */
+  --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+
+  --accent-purple: #8b5cf6;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+
+  /* UI Spacing & Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.12);
+
+  --backdrop-blur: blur(12px);
+}
+
+/* Base Styles & Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(245, 158, 11, 0.03) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Main Container Layout */
+.container {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 24px 20px 60px 20px;
+}
+
+.app-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Left Sidebar Navigation */
+.app-sidebar {
+  width: 270px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 20px;
+  min-height: calc(100vh - 48px);
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brand-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #3b82f6, #10b981);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.status-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Sidebar Vertical Navigation Menu */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.nav-item {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 13px 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.nav-item i {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-item:hover {
+  background: var(--bg-input);
+  color: var(--text-main);
+  transform: translateX(2px);
+}
+
+.nav-item.active {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.25);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.sidebar-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Right Main Content Area */
+.app-main-content {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+/* Glassmorphism Card Standard */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-hover);
+}
+
+/* Segmented Project Toggle Buttons */
+.segmented-control {
+  display: inline-flex;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.segmented-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.segmented-btn:hover {
+  color: var(--text-main);
+}
+
+.segmented-btn.active {
+  background: #ffffff;
+  color: var(--accent-primary);
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Tab Filter Control Bar Structure */
+.tab-filter-bar {
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filter-row-project {
+  display: flex;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.filter-row-options {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-item-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Custom Dropdown Multi-Select Component */
+.custom-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 170px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dropdown-toggle-btn:hover, .dropdown-toggle-btn:focus {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  animation: fadeIn 0.15s ease;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-main);
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-input);
+}
+
+.dropdown-item input[type="checkbox"] {
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.btn-emerald {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-emerald:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+}
+
+.small-link {
+  font-size: 12px;
+  color: var(--accent-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 2px 4px;
+}
+
+.small-link:hover {
+  color: var(--text-main);
+}
+
+/* Tab Content Visibility */
+.tab-pane {
+  display: none;
+  animation: fadeIn 0.25s ease;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card Titles & Controls */
+.card-title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-main);
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.form-select, .form-input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-select:focus, .form-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Chart Canvas Container */
+.chart-container {
+  position: relative;
+  width: 100%;
+  min-height: 480px;
+}
+
+/* Tables Component */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.pivot-table, .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.pivot-table th, .data-table th {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 700;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.pivot-table th.sortable, .data-table th.sortable {
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pivot-table th.sortable:hover, .data-table th.sortable:hover {
+  background: #e2e8f0;
+  color: var(--text-main);
+}
+
+.pivot-table td, .data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.pivot-table tr:hover, .data-table tr:hover {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.num-cell {
+  text-align: right;
+  font-family: 'Inter', monospace;
+  font-weight: 500;
+}
+
+.total-row {
+  background: rgba(59, 130, 246, 0.06) !important;
+  font-weight: 700 !important;
+}
+
+.total-row td {
+  color: #1d4ed8 !important;
+  border-top: 2px solid var(--accent-primary);
+}
+
+/* Category Badges */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.badge-cat-1 { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.3); }
+.badge-cat-2 { background: rgba(16, 185, 129, 0.12); color: #047857; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-cat-med { background: rgba(244, 63, 94, 0.12); color: #be123c; border: 1px solid rgba(244, 63, 94, 0.3); }
+.badge-cat-pub { background: rgba(139, 92, 246, 0.12); color: #6d28d9; border: 1px solid rgba(139, 92, 246, 0.3); }
+.badge-cat-rel { background: rgba(245, 158, 11, 0.12); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-cat-closed { background: rgba(107, 114, 128, 0.15); color: #374151; border: 1px solid rgba(107, 114, 128, 0.3); }
+
+/* Table Pagination Footer */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 4px 4px 4px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.table-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.page-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trend-badge-up {
+  color: #059669;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trend-badge-down {
+  color: #e11d48;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Section Subtitle */
+.section-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 20px 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 992px) {
+  .app-layout { flex-direction: column; }
+  .app-sidebar { width: 100%; position: static; min-height: auto; }
+  .sidebar-nav { flex-direction: row; overflow-x: auto; }
+  .nav-item { white-space: nowrap; }
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px 12px; }
+  .brand-title { font-size: 18px; }
+  .card-title-bar { flex-direction: column; align-items: flex-start; }
+  .filter-row-options { flex-direction: column; align-items: stretch; }
+  .dropdown-toggle-btn { width: 100%; }
+}
+  </style>
 </head>
 <body>
   <div class="container">
@@ -35,8 +710,10 @@
               <h1 class="brand-title">教育部(獎)補助經費<br>統計分析儀表板</h1>
             </div>
             
-            <div style="margin-top: 6px;">
-              <span class="status-badge"><i class="fa-solid fa-circle-check"></i> 經費單位：新台幣元</span>
+            <div style="margin-top: 8px;">
+              <span id="dataStatusBadge" class="status-badge">
+                <i class="fa-solid fa-circle-check"></i> 經費單位：新台幣元
+              </span>
             </div>
           </div>
 
@@ -78,7 +755,6 @@
             
             <!-- Tab 1 Independent Filter Bar -->
             <div class="tab-filter-bar">
-              <!-- Line 1: Project Filter Separate Line (計畫別獨立一行) -->
               <div class="filter-row-project">
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-solid fa-folder-open text-blue"></i> 計畫別篩選：</span>
@@ -90,14 +766,12 @@
                 </div>
               </div>
 
-              <!-- Line 2: Other Filters (Year, Category, TopN, Sort) -->
               <div class="filter-row-options">
-                <!-- 1. Year Filter (Multi-select Dropdown) -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-regular fa-calendar-days text-purple"></i> 年度：</span>
                   <div class="custom-dropdown" id="dropdownYear_ranking">
                     <button type="button" class="dropdown-toggle-btn" onclick="toggleDropdown('dropdownYear_ranking')">
-                      <span id="dropdownLabel_ranking">預設 114 年</span>
+                      <span id="dropdownLabel_ranking">最新年度</span>
                       <i class="fa-solid fa-chevron-down"></i>
                     </button>
                     <div class="dropdown-menu">
@@ -106,13 +780,12 @@
                         <button type="button" class="small-link" onclick="selectAllYearsInTab('ranking', false)">全清</button>
                       </div>
                       <div id="checkboxesYear_ranking">
-                        <!-- Dynamic checkboxes (Descending order) -->
+                        <!-- Dynamic checkboxes -->
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- 2. Category Filter -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組：</span>
                   <select id="rankingCatSelect" class="form-select" onchange="renderRankingChart()">
@@ -126,7 +799,6 @@
                   </select>
                 </div>
 
-                <!-- 3. Top N -->
                 <div class="filter-item">
                   <span class="filter-item-label">顯示校數：</span>
                   <select id="rankingTopNSelect" class="form-select" onchange="renderRankingChart()">
@@ -138,7 +810,6 @@
                   </select>
                 </div>
 
-                <!-- 4. Sort Order -->
                 <div class="filter-item">
                   <span class="filter-item-label">排序：</span>
                   <select id="rankingSortOrder" class="form-select" onchange="renderRankingChart()">
@@ -149,7 +820,6 @@
               </div>
             </div>
 
-            <!-- Chart Area -->
             <div class="card-title-bar">
               <div class="card-title">
                 <i class="fa-solid fa-chart-bar text-blue"></i> 各校核定金額排行榜 (堆疊橫向柱狀圖)
@@ -168,16 +838,13 @@
         <!-- TAB 2: CROSS-TABULATION PIVOT TABLE (核定金額交叉報表) -->
         <div id="tabPanePivot" class="tab-pane">
           <div class="glass-card">
-            
-            <!-- Tab 2 Independent Filter Bar -->
             <div class="tab-filter-bar">
               <div class="filter-row-options">
-                <!-- Year Filter -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-regular fa-calendar-days text-purple"></i> 年度：</span>
                   <div class="custom-dropdown" id="dropdownYear_pivot">
                     <button type="button" class="dropdown-toggle-btn" onclick="toggleDropdown('dropdownYear_pivot')">
-                      <span id="dropdownLabel_pivot">預設 114 年</span>
+                      <span id="dropdownLabel_pivot">最新年度</span>
                       <i class="fa-solid fa-chevron-down"></i>
                     </button>
                     <div class="dropdown-menu">
@@ -192,7 +859,6 @@
                   </div>
                 </div>
 
-                <!-- Category Filter -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組：</span>
                   <select id="pivotCatSelect" class="form-select" onchange="renderPivotTables()">
@@ -206,14 +872,12 @@
                   </select>
                 </div>
 
-                <!-- Search Input -->
                 <div class="filter-item" style="flex-grow: 1; max-width: 320px;">
                   <input type="text" id="pivotSearchInput" class="form-input" style="width: 100%;" placeholder="搜尋學校名稱/類組..." oninput="renderPivotTables()">
                 </div>
               </div>
             </div>
 
-            <!-- Section 1: 私校獎補助計畫 交叉報表 -->
             <div class="card-title-bar">
               <div class="card-title">
                 <i class="fa-solid fa-table-cells text-blue"></i> 【私校獎補助計畫】核定金額交叉報表
@@ -228,7 +892,6 @@
               </table>
             </div>
 
-            <!-- Section 2: 高教深耕計畫 交叉報表 -->
             <div class="card-title-bar">
               <div class="card-title">
                 <i class="fa-solid fa-table-cells text-emerald"></i> 【高教深耕計畫】核定金額交叉報表
@@ -249,10 +912,7 @@
         <!-- TAB 3: DETAILED DATA TABLE (明細資料表格) -->
         <div id="tabPaneDetail" class="tab-pane">
           <div class="glass-card">
-            
-            <!-- Tab 3 Independent Filter Bar -->
             <div class="tab-filter-bar">
-              <!-- Line 1: Project Filter Separate Line (計畫別獨立一行) -->
               <div class="filter-row-project">
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-solid fa-folder-open text-blue"></i> 計畫別篩選：</span>
@@ -264,14 +924,12 @@
                 </div>
               </div>
 
-              <!-- Line 2: Other Filters -->
               <div class="filter-row-options">
-                <!-- Year Filter -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-regular fa-calendar-days text-purple"></i> 年度：</span>
                   <div class="custom-dropdown" id="dropdownYear_detail">
                     <button type="button" class="dropdown-toggle-btn" onclick="toggleDropdown('dropdownYear_detail')">
-                      <span id="dropdownLabel_detail">預設 114 年</span>
+                      <span id="dropdownLabel_detail">最新年度</span>
                       <i class="fa-solid fa-chevron-down"></i>
                     </button>
                     <div class="dropdown-menu">
@@ -286,7 +944,6 @@
                   </div>
                 </div>
 
-                <!-- Category Filter -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組：</span>
                   <select id="detailCatSelect" class="form-select" onchange="onDetailSearchInput()">
@@ -300,7 +957,6 @@
                   </select>
                 </div>
 
-                <!-- Search Input -->
                 <div class="filter-item" style="flex-grow: 1; max-width: 280px;">
                   <input type="text" id="detailSearchInput" class="form-input" style="width: 100%;" placeholder="搜尋學校/類組/計畫..." oninput="onDetailSearchInput()">
                 </div>
@@ -372,11 +1028,8 @@
         <!-- TAB 4: SINGLE SCHOOL TREND ANALYSIS (單校歷年變動趨勢) -->
         <div id="tabPaneSchool" class="tab-pane">
           <div class="glass-card" style="margin-bottom: 24px;">
-            
-            <!-- Tab 4 Filter Bar -->
             <div class="tab-filter-bar">
               <div class="filter-row-options">
-                <!-- Category Filter for Single School -->
                 <div class="filter-item">
                   <span class="filter-item-label"><i class="fa-solid fa-school text-emerald"></i> 私校類組篩選：</span>
                   <select id="schoolCatSelect" class="form-select" onchange="onSchoolCategoryChange()">
@@ -390,7 +1043,6 @@
                   </select>
                 </div>
 
-                <!-- Linked School Select -->
                 <div class="filter-item" style="flex-grow: 1; max-width: 420px;">
                   <span class="filter-item-label"><i class="fa-solid fa-graduation-cap text-amber"></i> 目標學校：</span>
                   <select id="schoolSelect" class="form-select" style="width: 100%;" onchange="onSchoolSelectChange()">
@@ -400,7 +1052,6 @@
               </div>
             </div>
 
-            <!-- Single School Historical Trend Chart -->
             <div class="card-title-bar" style="margin-top: 10px;">
               <div class="card-title" style="font-size: 16px;">
                 <i class="fa-solid fa-chart-line text-blue"></i>
@@ -416,7 +1067,6 @@
             </div>
           </div>
 
-          <!-- Single School Detail Tables Separated by Project Type -->
           <div class="glass-card">
             <div class="card-title-bar">
               <div class="card-title">
@@ -434,7 +1084,6 @@
               </div>
             </div>
 
-            <!-- Section 1: 私校獎補助計畫 歷年明細與增減分析 -->
             <div class="section-subtitle">
               <i class="fa-solid fa-circle-check text-blue"></i> 【私校獎補助計畫】歷年核定金額與增減分析
             </div>
@@ -455,7 +1104,6 @@
               </table>
             </div>
 
-            <!-- Section 2: 高教深耕計畫 歷年明細與增減分析 -->
             <div class="section-subtitle">
               <i class="fa-solid fa-circle-check text-emerald"></i> 【高教深耕計畫】歷年核定金額與增減分析
             </div>
@@ -483,9 +1131,1161 @@
     </div>
   </div>
 
-  <!-- Load Data File -->
-  <script src="data.js"></script>
-  <!-- Load Main Application Logic -->
-  <script src="app.js"></script>
+  <!-- Integrated Config & Application Script (config.js + app.js) -->
+  <script>
+/* ==========================================================================
+   教育部(獎)補助經費統計分析儀表板 - 整合設定檔 (CONFIG)
+   ========================================================================== */
+const CONFIG = {
+  // 請在此處貼上您的 Google Apps Script 網頁應用程式 URL
+  // 例如: "https://script.google.com/macros/s/AKfycb.../exec"
+  googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbyDGgdGj1mWtz6k7tb8t-zSur08wzrBvvAIftHaVXZsu164aQ6W0sKHKHnKletdHuVS/exec"
+};
+
+/* ==========================================================================
+   教育部(獎)補助經費統計分析儀表板 - 整合主程式邏輯 (APP LOGIC)
+   ========================================================================== */
+
+// --- Global Data & Fixed Category Order ---
+let rawRecords = [];
+let allProjects = ['私校獎補助計畫', '高教深耕計畫'];
+let allYears = []; // Dynamically extracted and sorted DESCENDING (114, 113, 112...)
+let allSchools = [];
+
+// Map school to its category for fast lookup
+const schoolCategoryMap = {};
+
+// Strict Category Order per Requirement
+const ORDERED_CATEGORIES = [
+  '綜合大學一',
+  '綜合大學二',
+  '醫學類組',
+  '宗教研修學院',
+  '停辦',
+  '公立'
+];
+
+// --- Independent Filter States per Tab ---
+const filterState = {
+  ranking: {
+    project: 'all',
+    years: new Set(),
+    category: '綜合大學一',
+    topN: '20',
+    sort: 'desc'
+  },
+  pivot: {
+    years: new Set(),
+    category: '綜合大學一',
+    search: '',
+    sortCol: 'total',
+    sortDir: 'desc'
+  },
+  detail: {
+    project: 'all',
+    years: new Set(),
+    category: '綜合大學一',
+    search: '',
+    currentPage: 1,
+    pageSize: 25,
+    sortCol: 'amount',
+    sortDir: 'desc'
+  },
+  school: {
+    category: '綜合大學一',
+    selectedSchool: ''
+  }
+};
+
+// Chart Instances
+let rankingChartInstance = null;
+let schoolTrendChartInstance = null;
+
+// --- Clean Number Formatter ---
+function formatNumber(amount) {
+  if (amount === undefined || amount === null || isNaN(amount)) return '0';
+  return Math.round(amount).toLocaleString('en-US');
+}
+
+function formatShortAmount(amount) {
+  if (!amount) return '0';
+  if (amount >= 100000000) {
+    return (amount / 100000000).toFixed(2) + ' 億';
+  } else if (amount >= 10000) {
+    return (amount / 10000).toFixed(0) + ' 萬';
+  }
+  return Math.round(amount).toLocaleString('en-US');
+}
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+  initData();
+});
+
+function initData() {
+  const savedApiUrl = (typeof CONFIG !== 'undefined' ? CONFIG.googleAppsScriptUrl : '') || localStorage.getItem('googleAppsScriptUrl');
+
+  if (savedApiUrl && savedApiUrl.trim() !== '') {
+    loadDataFromAppsScript(savedApiUrl);
+  } else if (typeof DASHBOARD_DATA !== 'undefined' && Array.isArray(DASHBOARD_DATA)) {
+    rawRecords = DASHBOARD_DATA;
+    onDataLoaded();
+  } else {
+    fetch('data.json?t=' + new Date().getTime())
+      .then(res => res.json())
+      .then(data => {
+        rawRecords = data;
+        onDataLoaded();
+      })
+      .catch(err => console.error("Failed to load local data:", err));
+  }
+}
+
+// --- Google Apps Script Private API Fetch ---
+function loadDataFromAppsScript(apiUrl) {
+  fetch(apiUrl)
+    .then(res => res.json())
+    .then(json => {
+      if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
+        rawRecords = json.data;
+        onDataLoaded();
+      } else {
+        if (typeof DASHBOARD_DATA !== 'undefined') {
+          rawRecords = DASHBOARD_DATA;
+          onDataLoaded();
+        }
+      }
+    })
+    .catch(err => {
+      console.error("Failed to load Apps Script API:", err);
+      if (typeof DASHBOARD_DATA !== 'undefined') {
+        rawRecords = DASHBOARD_DATA;
+        onDataLoaded();
+      }
+    });
+}
+
+function onDataLoaded() {
+  // Extract all distinct years and sort DESCENDING (e.g. 114, 113, 112...)
+  allYears = Array.from(new Set(rawRecords.map(r => r.year))).filter(Boolean).sort((a, b) => b - a);
+  allProjects = Array.from(new Set(rawRecords.map(r => r.project))).filter(Boolean);
+
+  rawRecords.forEach(r => {
+    if (r.school && r.category) {
+      schoolCategoryMap[r.school] = r.category;
+    }
+  });
+
+  allSchools = Array.from(new Set(rawRecords.map(r => r.school))).filter(Boolean).sort((a, b) => a.localeCompare(b, 'zh-TW'));
+
+  // Dynamically default filter to the LATEST year present in the data (allYears[0])
+  const latestYear = allYears.length > 0 ? allYears[0] : 114;
+  
+  ['ranking', 'pivot', 'detail'].forEach(tabId => {
+    filterState[tabId].years = new Set([latestYear]);
+    renderYearDropdownCheckboxes(tabId);
+  });
+
+  populateSchoolSelect();
+  renderRankingChart();
+}
+
+// --- Direct Visible Segmented Control Project Selection ---
+function setProjectFilter(tabId, projValue) {
+  filterState[tabId].project = projValue;
+
+  const container = document.getElementById(`projSegmented_${tabId}`);
+  if (container) {
+    container.querySelectorAll('.segmented-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-value') === projValue);
+    });
+  }
+
+  if (tabId === 'ranking') renderRankingChart();
+  else if (tabId === 'detail') {
+    filterState.detail.currentPage = 1;
+    renderDetailTable();
+  }
+}
+
+// --- Multi-Select Year Dropdown UI Logic ---
+function renderYearDropdownCheckboxes(tabId) {
+  const container = document.getElementById(`checkboxesYear_${tabId}`);
+  if (!container) return;
+
+  const currentSet = filterState[tabId].years;
+
+  container.innerHTML = allYears.map(yr => {
+    const isChecked = currentSet.has(yr);
+    return `
+      <label class="dropdown-item">
+        <input type="checkbox" value="${yr}" ${isChecked ? 'checked' : ''} onchange="onYearCheckChange('${tabId}')">
+        <span>${yr} 年度</span>
+      </label>
+    `;
+  }).join('');
+
+  updateYearDropdownLabel(tabId);
+}
+
+function toggleDropdown(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  if (!dropdown) return;
+  const menu = dropdown.querySelector('.dropdown-menu');
+  
+  document.querySelectorAll('.dropdown-menu').forEach(m => {
+    if (m !== menu) m.classList.remove('show');
+  });
+
+  menu.classList.toggle('show');
+}
+
+function onYearCheckChange(tabId) {
+  const container = document.getElementById(`checkboxesYear_${tabId}`);
+  const checkedInputs = container.querySelectorAll('input[type="checkbox"]:checked');
+  
+  if (checkedInputs.length === 0) {
+    alert("請至少保留勾選一個年度！");
+    renderYearDropdownCheckboxes(tabId);
+    return;
+  }
+
+  const newSet = new Set(Array.from(checkedInputs).map(cb => parseInt(cb.value, 10)));
+  filterState[tabId].years = newSet;
+
+  updateYearDropdownLabel(tabId);
+
+  if (tabId === 'ranking') renderRankingChart();
+  else if (tabId === 'pivot') renderPivotTables();
+  else if (tabId === 'detail') {
+    filterState.detail.currentPage = 1;
+    renderDetailTable();
+  }
+}
+
+function selectAllYearsInTab(tabId, selectAll) {
+  if (selectAll) {
+    filterState[tabId].years = new Set(allYears);
+  } else {
+    const latestYear = allYears.length > 0 ? allYears[0] : 114;
+    filterState[tabId].years = new Set([latestYear]);
+  }
+  renderYearDropdownCheckboxes(tabId);
+
+  if (tabId === 'ranking') renderRankingChart();
+  else if (tabId === 'pivot') renderPivotTables();
+  else if (tabId === 'detail') {
+    filterState.detail.currentPage = 1;
+    renderDetailTable();
+  }
+}
+
+function updateYearDropdownLabel(tabId) {
+  const label = document.getElementById(`dropdownLabel_${tabId}`);
+  if (!label) return;
+
+  const count = filterState[tabId].years.size;
+  if (count === allYears.length) {
+    label.textContent = `全選 (${count}個年度)`;
+  } else {
+    const listStr = Array.from(filterState[tabId].years).sort((a,b)=>b-a).map(y => `${y}年`).join(',');
+    label.textContent = `${listStr} (${count}個)`;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.custom-dropdown')) {
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+  }
+});
+
+function getCategoryBadgeClass(cat) {
+  if (cat.includes('一')) return 'badge-cat-1';
+  if (cat.includes('二')) return 'badge-cat-2';
+  if (cat.includes('醫學')) return 'badge-cat-med';
+  if (cat.includes('公立')) return 'badge-cat-pub';
+  if (cat.includes('宗教')) return 'badge-cat-rel';
+  if (cat.includes('停辦')) return 'badge-cat-closed';
+  return 'badge-cat-1';
+}
+
+// ===================================================================
+// TAB 1: RANKING CHART (各校核定金額排行榜 - 堆疊橫向柱狀圖)
+// ===================================================================
+function renderRankingChart() {
+  const catSelect = document.getElementById('rankingCatSelect');
+  const topNSelect = document.getElementById('rankingTopNSelect');
+  const sortSelect = document.getElementById('rankingSortOrder');
+
+  if (catSelect) filterState.ranking.category = catSelect.value;
+  if (topNSelect) filterState.ranking.topN = topNSelect.value;
+  if (sortSelect) filterState.ranking.sort = sortSelect.value;
+
+  const st = filterState.ranking;
+
+  let records = rawRecords.filter(r => {
+    const matchProj = st.project === 'all' || r.project === st.project;
+    const matchYr = st.years.has(r.year);
+    const matchCat = st.category === 'all' || r.category === st.category;
+    return matchProj && matchYr && matchCat;
+  });
+
+  const schoolMap = {};
+  records.forEach(r => {
+    if (!schoolMap[r.school]) {
+      schoolMap[r.school] = {
+        school: r.school,
+        privateAmt: 0,
+        sproutAmt: 0,
+        totalAmt: 0
+      };
+    }
+    if (r.project === '私校獎補助計畫') {
+      schoolMap[r.school].privateAmt += r.amount;
+    } else if (r.project === '高教深耕計畫') {
+      schoolMap[r.school].sproutAmt += r.amount;
+    }
+    schoolMap[r.school].totalAmt += r.amount;
+  });
+
+  let sortedData = Object.values(schoolMap);
+  sortedData.sort((a, b) => st.sort === 'desc' ? b.totalAmt - a.totalAmt : a.totalAmt - b.totalAmt);
+
+  if (st.topN !== 'all') {
+    sortedData = sortedData.slice(0, parseInt(st.topN, 10));
+  }
+
+  const labels = sortedData.map(d => d.school);
+  const privateAmounts = sortedData.map(d => d.privateAmt);
+  const sproutAmounts = sortedData.map(d => d.sproutAmt);
+
+  const ctx = document.getElementById('rankingChart').getContext('2d');
+
+  if (rankingChartInstance) {
+    rankingChartInstance.destroy();
+  }
+
+  const textColor = '#0f172a';
+  const gridColor = 'rgba(0, 0, 0, 0.08)';
+
+  rankingChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: '私校獎補助計畫 (藍色)',
+          data: privateAmounts,
+          backgroundColor: '#3b82f6',
+          hoverBackgroundColor: '#2563eb',
+          borderRadius: 4,
+          stack: 'Stack 0'
+        },
+        {
+          label: '高教深耕計畫 (綠色)',
+          data: sproutAmounts,
+          backgroundColor: '#10b981',
+          hoverBackgroundColor: '#059669',
+          borderRadius: 4,
+          stack: 'Stack 0'
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: textColor,
+            font: { family: 'Noto Sans TC', size: 12, weight: '600' },
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          titleColor: textColor,
+          bodyColor: textColor,
+          borderColor: 'rgba(59, 130, 246, 0.3)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label || '';
+              const val = context.raw || 0;
+              return `${label}: ${formatNumber(val)} (${formatShortAmount(val)})`;
+            },
+            footer: function(tooltipItems) {
+              let total = 0;
+              tooltipItems.forEach(item => {
+                total += item.raw || 0;
+              });
+              return `全計畫合計: ${formatNumber(total)} (${formatShortAmount(total)})`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor,
+            font: { family: 'Inter', size: 11 },
+            callback: function(val) { return formatShortAmount(val); }
+          }
+        },
+        y: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            color: textColor,
+            font: { family: 'Noto Sans TC', size: 12, weight: '500' }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ===================================================================
+// TAB 2: CROSS-TABULATION PIVOT TABLES (核定金額交叉報表 - 依計畫別分開)
+// ===================================================================
+function renderPivotTables() {
+  const catSelect = document.getElementById('pivotCatSelect');
+  const searchInput = document.getElementById('pivotSearchInput');
+
+  if (catSelect) filterState.pivot.category = catSelect.value;
+  if (searchInput) filterState.pivot.search = searchInput.value.trim().toLowerCase();
+
+  const st = filterState.pivot;
+  const activeYears = Array.from(st.years).sort((a, b) => a - b);
+
+  renderSinglePivotTable('私校獎補助計畫', 'pivotTable_private', activeYears, st);
+  renderSinglePivotTable('高教深耕計畫', 'pivotTable_sprout', activeYears, st);
+}
+
+function renderSinglePivotTable(projectName, tableElemId, activeYears, st) {
+  let records = rawRecords.filter(r => {
+    const matchProj = r.project === projectName;
+    const matchYr = st.years.has(r.year);
+    const matchCat = st.category === 'all' || r.category === st.category;
+    return matchProj && matchYr && matchCat;
+  });
+
+  const matrix = {};
+  records.forEach(r => {
+    if (!matrix[r.school]) {
+      matrix[r.school] = {
+        school: r.school,
+        category: r.category,
+        years: {},
+        total: 0
+      };
+    }
+    matrix[r.school].years[r.year] = (matrix[r.school].years[r.year] || 0) + r.amount;
+    matrix[r.school].total += r.amount;
+  });
+
+  let rows = Object.values(matrix);
+
+  if (st.search) {
+    rows = rows.filter(r => r.school.toLowerCase().includes(st.search) || r.category.toLowerCase().includes(st.search));
+  }
+
+  rows.sort((a, b) => {
+    let valA, valB;
+    if (st.sortCol === 'school') {
+      valA = a.school; valB = b.school;
+      return st.sortDir === 'asc' ? valA.localeCompare(valB, 'zh-TW') : valB.localeCompare(valA, 'zh-TW');
+    } else if (st.sortCol === 'category') {
+      valA = a.category; valB = b.category;
+      return st.sortDir === 'asc' ? valA.localeCompare(valB, 'zh-TW') : valB.localeCompare(valA, 'zh-TW');
+    } else if (st.sortCol === 'total') {
+      valA = a.total; valB = b.total;
+    } else {
+      const yr = parseInt(st.sortCol, 10);
+      valA = a.years[yr] || 0;
+      valB = b.years[yr] || 0;
+    }
+    return st.sortDir === 'asc' ? valA - valB : valB - valA;
+  });
+
+  let html = `
+    <thead>
+      <tr>
+        <th class="sortable" onclick="handlePivotSort('school')">
+          學校名稱 ${st.sortCol === 'school' ? (st.sortDir === 'asc' ? '▲' : '▼') : ''}
+        </th>
+        <th class="sortable" onclick="handlePivotSort('category')">
+          私校類組 ${st.sortCol === 'category' ? (st.sortDir === 'asc' ? '▲' : '▼') : ''}
+        </th>
+  `;
+
+  activeYears.forEach(yr => {
+    const isSorted = st.sortCol === String(yr);
+    html += `
+      <th class="sortable num-cell" onclick="handlePivotSort('${yr}')">
+        ${yr} 年度 ${isSorted ? (st.sortDir === 'asc' ? '▲' : '▼') : ''}
+      </th>
+    `;
+  });
+
+  const isTotalSorted = st.sortCol === 'total';
+  html += `
+        <th class="sortable num-cell" style="color: var(--accent-primary);" onclick="handlePivotSort('total')">
+          歷年合計 ${isTotalSorted ? (st.sortDir === 'asc' ? '▲' : '▼') : ''}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  if (rows.length === 0) {
+    html += `
+      <tr>
+        <td colspan="${activeYears.length + 3}" class="empty-state">
+          <p>沒有符合條件的 ${projectName} 交叉報表資料</p>
+        </td>
+      </tr>
+    `;
+  } else {
+    rows.forEach(r => {
+      const catBadgeClass = getCategoryBadgeClass(r.category);
+      html += `
+        <tr>
+          <td style="font-weight: 600;">${r.school}</td>
+          <td><span class="badge ${catBadgeClass}">${r.category}</span></td>
+      `;
+
+      activeYears.forEach(y => {
+        const val = r.years[y];
+        html += `<td class="num-cell">${val ? formatNumber(val) : '-'}</td>`;
+      });
+
+      html += `<td class="num-cell" style="font-weight: 700; color: var(--accent-primary);">${formatNumber(r.total)}</td></tr>`;
+    });
+  }
+
+  html += `</tbody>`;
+  document.getElementById(tableElemId).innerHTML = html;
+}
+
+function handlePivotSort(col) {
+  const st = filterState.pivot;
+  if (st.sortCol === col) {
+    st.sortDir = st.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    st.sortCol = col;
+    st.sortDir = col === 'school' || col === 'category' ? 'asc' : 'desc';
+  }
+  renderPivotTables();
+}
+
+// ===================================================================
+// TAB 3: DETAILED DATA TABLE (明細資料表格)
+// ===================================================================
+function renderDetailTable() {
+  const catSelect = document.getElementById('detailCatSelect');
+  const searchInput = document.getElementById('detailSearchInput');
+
+  if (catSelect) filterState.detail.category = catSelect.value;
+  if (searchInput) filterState.detail.search = searchInput.value.trim().toLowerCase();
+
+  const st = filterState.detail;
+
+  let records = rawRecords.filter(r => {
+    const matchProj = st.project === 'all' || r.project === st.project;
+    const matchYr = st.years.has(r.year);
+    const matchCat = st.category === 'all' || r.category === st.category;
+    return matchProj && matchYr && matchCat;
+  });
+
+  if (st.search) {
+    records = records.filter(r => 
+      r.school.toLowerCase().includes(st.search) ||
+      r.category.toLowerCase().includes(st.search) ||
+      r.project.toLowerCase().includes(st.search) ||
+      String(r.year).includes(st.search)
+    );
+  }
+
+  records.sort((a, b) => {
+    let res = 0;
+    const col = st.sortCol;
+    const dir = st.sortDir === 'asc' ? 1 : -1;
+
+    if (col === 'amount') {
+      res = (a.amount - b.amount) * dir;
+      if (res === 0) res = (b.year - a.year);
+    } else if (col === 'year') {
+      res = (a.year - b.year) * dir;
+      if (res === 0) res = (b.amount - a.amount);
+    } else if (col === 'school') {
+      res = a.school.localeCompare(b.school, 'zh-TW') * dir;
+      if (res === 0) res = (b.year - a.year);
+    } else if (col === 'category') {
+      res = a.category.localeCompare(b.category, 'zh-TW') * dir;
+      if (res === 0) res = (b.amount - a.amount);
+    } else if (col === 'project') {
+      res = a.project.localeCompare(b.project, 'zh-TW') * dir;
+      if (res === 0) res = (b.amount - a.amount);
+    }
+
+    return res;
+  });
+
+  ['year', 'school', 'category', 'project', 'amount'].forEach(c => {
+    const icon = document.getElementById(`sortIcon_${c}`);
+    if (icon) {
+      if (c === st.sortCol) {
+        icon.className = `fa-solid fa-sort-${st.sortDir === 'asc' ? 'up' : 'down'}`;
+      } else {
+        icon.className = `fa-solid fa-sort`;
+      }
+    }
+  });
+
+  const totalCount = records.length;
+  let pageRecords = records;
+  let totalPages = 1;
+
+  if (st.pageSize > 0) {
+    totalPages = Math.ceil(totalCount / st.pageSize) || 1;
+    if (st.currentPage > totalPages) st.currentPage = totalPages;
+    if (st.currentPage < 1) st.currentPage = 1;
+
+    const startIdx = (st.currentPage - 1) * st.pageSize;
+    const endIdx = startIdx + st.pageSize;
+    pageRecords = records.slice(startIdx, endIdx);
+  }
+
+  const tbody = document.getElementById('detailTableBody');
+  if (pageRecords.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">
+          <i class="fa-solid fa-folder-open empty-icon"></i>
+          <p>沒有符合搜尋條件的明細資料</p>
+        </td>
+      </tr>
+    `;
+  } else {
+    tbody.innerHTML = pageRecords.map(r => {
+      const catBadge = getCategoryBadgeClass(r.category);
+      const projBadge = r.project.includes('高教') ? 'badge-proj-sprout' : 'badge-proj-private';
+      return `
+        <tr>
+          <td style="font-weight: 600;">${r.year} 年</td>
+          <td style="font-weight: 700;">${r.school}</td>
+          <td><span class="badge ${catBadge}">${r.category}</span></td>
+          <td><span class="badge ${projBadge}">${r.project}</span></td>
+          <td class="num-cell" style="font-weight: 700;">${formatNumber(r.amount)}</td>
+          <td style="text-align: center;">
+            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 12px; border-color: var(--accent-primary); color: var(--accent-primary);" onclick="jumpToSchoolTrend('${r.school}')" title="查看 ${r.school} 歷年變動趨勢">
+              <i class="fa-solid fa-chart-line"></i> 查看趨勢
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  const startItem = totalCount > 0 ? (st.currentPage - 1) * (st.pageSize > 0 ? st.pageSize : totalCount) + 1 : 0;
+  const endItem = st.pageSize > 0 ? Math.min(st.currentPage * st.pageSize, totalCount) : totalCount;
+
+  document.getElementById('detailTableInfo').textContent = `顯示第 ${startItem} 至 ${endItem} 筆，共 ${totalCount} 筆資料 (資料庫共 ${rawRecords.length} 筆紀錄)`;
+
+  renderPaginationControls(totalPages);
+}
+
+function handleDetailSort(column) {
+  const st = filterState.detail;
+  if (st.sortCol === column) {
+    st.sortDir = st.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    st.sortCol = column;
+    st.sortDir = column === 'year' || column === 'school' ? 'asc' : 'desc';
+  }
+  st.currentPage = 1;
+  renderDetailTable();
+}
+
+function onDetailSearchInput() {
+  filterState.detail.currentPage = 1;
+  renderDetailTable();
+}
+
+function onPageSizeChange() {
+  filterState.detail.pageSize = parseInt(document.getElementById('pageSizeSelect').value, 10);
+  filterState.detail.currentPage = 1;
+  renderDetailTable();
+}
+
+function renderPaginationControls(totalPages) {
+  const container = document.getElementById('detailPagination');
+  const st = filterState.detail;
+  if (st.pageSize <= 0 || totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = `
+    <button class="page-btn" onclick="changeDetailPage(1)" ${st.currentPage === 1 ? 'disabled' : ''} title="第一頁">
+      <i class="fa-solid fa-angles-left"></i>
+    </button>
+    <button class="page-btn" onclick="changeDetailPage(${st.currentPage - 1})" ${st.currentPage === 1 ? 'disabled' : ''} title="上一頁">
+      <i class="fa-solid fa-angle-left"></i>
+    </button>
+  `;
+
+  const maxVisiblePages = 5;
+  let startPage = Math.max(1, st.currentPage - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    html += `
+      <button class="page-btn ${p === st.currentPage ? 'active' : ''}" onclick="changeDetailPage(${p})">
+        ${p}
+      </button>
+    `;
+  }
+
+  html += `
+    <button class="page-btn" onclick="changeDetailPage(${st.currentPage + 1})" ${st.currentPage === totalPages ? 'disabled' : ''} title="下一頁">
+      <i class="fa-solid fa-angle-right"></i>
+    </button>
+    <button class="page-btn" onclick="changeDetailPage(${totalPages})" ${st.currentPage === totalPages ? 'disabled' : ''} title="最後一頁">
+      <i class="fa-solid fa-angles-right"></i>
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+function changeDetailPage(page) {
+  filterState.detail.currentPage = page;
+  renderDetailTable();
+}
+
+// ===================================================================
+// TAB 4: SINGLE SCHOOL TREND (單校歷年變動趨勢)
+// ===================================================================
+function populateSchoolSelect() {
+  const select = document.getElementById('schoolSelect');
+  if (!select) return;
+
+  const currentCat = filterState.school.category;
+
+  let filteredSchools = allSchools;
+  if (currentCat !== 'all') {
+    filteredSchools = allSchools.filter(sch => schoolCategoryMap[sch] === currentCat);
+  }
+
+  if (filteredSchools.length === 0) {
+    select.innerHTML = `<option value="">(此類組無學校資料)</option>`;
+    filterState.school.selectedSchool = '';
+    renderSchoolTrendView();
+    return;
+  }
+
+  select.innerHTML = filteredSchools.map(sch => `<option value="${sch}">${sch}</option>`).join('');
+
+  if (!filteredSchools.includes(filterState.school.selectedSchool)) {
+    filterState.school.selectedSchool = filteredSchools[0];
+  }
+  select.value = filterState.school.selectedSchool;
+}
+
+function onSchoolCategoryChange() {
+  const catSelect = document.getElementById('schoolCatSelect');
+  if (catSelect) {
+    filterState.school.category = catSelect.value;
+  }
+  populateSchoolSelect();
+  renderSchoolTrendView();
+}
+
+function jumpToSchoolTrend(schoolName) {
+  const schCat = schoolCategoryMap[schoolName] || 'all';
+  filterState.school.category = schCat;
+  filterState.school.selectedSchool = schoolName;
+
+  const catSelect = document.getElementById('schoolCatSelect');
+  if (catSelect) catSelect.value = schCat;
+
+  populateSchoolSelect();
+  switchTab('school');
+  renderSchoolTrendView();
+}
+
+function onSchoolSelectChange() {
+  filterState.school.selectedSchool = document.getElementById('schoolSelect').value;
+  renderSchoolTrendView();
+}
+
+function renderSchoolTrendView() {
+  const schoolName = filterState.school.selectedSchool;
+  if (!schoolName) {
+    document.getElementById('schoolChartTitle').textContent = `請選擇學校`;
+    document.getElementById('schoolTableMainTitle').textContent = `請選擇學校`;
+    if (schoolTrendChartInstance) schoolTrendChartInstance.destroy();
+    document.getElementById('schoolTableBody_private').innerHTML = `<tr><td colspan="5" class="empty-state"><p>無學校資料</p></td></tr>`;
+    document.getElementById('schoolTableBody_sprout').innerHTML = `<tr><td colspan="5" class="empty-state"><p>無學校資料</p></td></tr>`;
+    return;
+  }
+
+  const schoolRecords = rawRecords.filter(r => r.school === schoolName);
+
+  document.getElementById('schoolChartTitle').textContent = `${schoolName} - 歷年金額變動趨勢圖`;
+  document.getElementById('schoolTableMainTitle').textContent = `${schoolName} - 歷年核定金額明細與年增減分析 (依計畫別分開呈現)`;
+
+  renderSchoolTrendChart(schoolName, schoolRecords);
+  renderSingleSchoolProjectTable(schoolRecords, '私校獎補助計畫', 'schoolTableBody_private');
+  renderSingleSchoolProjectTable(schoolRecords, '高教深耕計畫', 'schoolTableBody_sprout');
+}
+
+function renderSchoolTrendChart(schoolName, schoolRecords) {
+  const ctx = document.getElementById('schoolTrendChart').getContext('2d');
+  
+  if (schoolTrendChartInstance) {
+    schoolTrendChartInstance.destroy();
+  }
+
+  const textColor = '#0f172a';
+  const gridColor = 'rgba(0, 0, 0, 0.08)';
+
+  const chartYears = [...allYears].sort((a, b) => a - b);
+
+  const projPrivateData = chartYears.map(y => {
+    const r = schoolRecords.find(item => item.year === y && item.project === '私校獎補助計畫');
+    return r ? r.amount : 0;
+  });
+
+  const projSproutData = chartYears.map(y => {
+    const r = schoolRecords.find(item => item.year === y && item.project === '高教深耕計畫');
+    return r ? r.amount : 0;
+  });
+
+  const totalData = chartYears.map(y => {
+    return schoolRecords.filter(item => item.year === y).reduce((sum, item) => sum + item.amount, 0);
+  });
+
+  schoolTrendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartYears.map(y => `${y} 年度`),
+      datasets: [
+        {
+          label: '私校獎補助計畫 (藍色)',
+          data: projPrivateData,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.12)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        },
+        {
+          label: '高教深耕計畫 (綠色)',
+          data: projSproutData,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        },
+        {
+          label: '全計畫總計 (橘黃色)',
+          data: totalData,
+          borderColor: '#f59e0b',
+          borderDash: [5, 5],
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: textColor, font: { family: 'Noto Sans TC', size: 12, weight: '600' } }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          titleColor: textColor,
+          bodyColor: textColor,
+          borderColor: 'rgba(59, 130, 246, 0.3)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}：${formatNumber(context.raw)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { family: 'Inter', size: 12 } }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor,
+            font: { family: 'Inter', size: 11 },
+            callback: function(val) { return formatShortAmount(val); }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderSingleSchoolProjectTable(schoolRecords, projectName, tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+
+  const records = schoolRecords.filter(r => r.project === projectName).sort((a, b) => a.year - b.year);
+
+  if (records.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state" style="padding: 20px;">
+          <p>該校無 ${projectName} 之核定資料</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = '';
+  records.forEach((r) => {
+    const prevRecord = records.find(item => item.year === r.year - 1);
+    let diffHtml = '-';
+    let rateHtml = '-';
+
+    if (prevRecord && prevRecord.amount > 0) {
+      const diff = r.amount - prevRecord.amount;
+      const rate = (diff / prevRecord.amount) * 100;
+
+      if (diff >= 0) {
+        diffHtml = `<span style="color: #059669; font-weight: 600;">+${formatNumber(diff)}</span>`;
+        rateHtml = `<span class="trend-badge-up">+${rate.toFixed(2)}%</span>`;
+      } else {
+        diffHtml = `<span style="color: #e11d48; font-weight: 600;">${formatNumber(diff)}</span>`;
+        rateHtml = `<span class="trend-badge-down">${rate.toFixed(2)}%</span>`;
+      }
+    }
+
+    const catBadge = getCategoryBadgeClass(r.category);
+
+    html += `
+      <tr>
+        <td style="font-weight: 700;">${r.year} 年</td>
+        <td><span class="badge ${catBadge}">${r.category}</span></td>
+        <td class="num-cell" style="font-weight: 700;">${formatNumber(r.amount)}</td>
+        <td class="num-cell">${diffHtml}</td>
+        <td class="num-cell">${rateHtml}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+// ===================================================================
+// EXPORT FUNCTIONS (Excel & CSV)
+// ===================================================================
+function exportDetailExcel() {
+  const st = filterState.detail;
+  let records = rawRecords.filter(r => {
+    const matchProj = st.project === 'all' || r.project === st.project;
+    const matchYr = st.years.has(r.year);
+    const matchCat = st.category === 'all' || r.category === st.category;
+    return matchProj && matchYr && matchCat;
+  });
+
+  if (st.search) {
+    records = records.filter(r => 
+      r.school.toLowerCase().includes(st.search) ||
+      r.category.toLowerCase().includes(st.search) ||
+      r.project.toLowerCase().includes(st.search)
+    );
+  }
+
+  if (records.length === 0) {
+    alert("沒有符合條件的明細資料可供匯出！");
+    return;
+  }
+
+  const exportData = records.map(r => ({
+    '年度': r.year,
+    '學校名稱': r.school,
+    '私校類組': r.category,
+    '計畫別': r.project,
+    '核定金額': r.amount
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "補助明細");
+
+  XLSX.writeFile(workbook, `教育部補助明細報表_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportDetailCSV() {
+  const st = filterState.detail;
+  let records = rawRecords.filter(r => {
+    const matchProj = st.project === 'all' || r.project === st.project;
+    const matchYr = st.years.has(r.year);
+    const matchCat = st.category === 'all' || r.category === st.category;
+    return matchProj && matchYr && matchCat;
+  });
+
+  if (st.search) {
+    records = records.filter(r => 
+      r.school.toLowerCase().includes(st.search) ||
+      r.category.toLowerCase().includes(st.search) ||
+      r.project.toLowerCase().includes(st.search)
+    );
+  }
+
+  if (records.length === 0) {
+    alert("沒有符合條件的明細資料可供匯出！");
+    return;
+  }
+
+  let csvContent = "\uFEFF年度,學校名稱,私校類組,計畫別,核定金額\n";
+  records.forEach(r => {
+    csvContent += `"${r.year}","${r.school}","${r.category}","${r.project}",${r.amount}\n`;
+  });
+
+  downloadCSV(csvContent, `教育部補助明細報表_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportPivotExcel(projectName) {
+  const st = filterState.pivot;
+  const activeYears = Array.from(st.years).sort((a, b) => a - b);
+  
+  let records = rawRecords.filter(r => {
+    const matchProj = r.project === projectName;
+    const matchYr = st.years.has(r.year);
+    const matchCat = st.category === 'all' || r.category === st.category;
+    return matchProj && matchYr && matchCat;
+  });
+
+  if (records.length === 0) {
+    alert("無資料可匯出！");
+    return;
+  }
+
+  const matrix = {};
+  records.forEach(r => {
+    if (!matrix[r.school]) {
+      matrix[r.school] = { '學校名稱': r.school, '私校類組': r.category };
+      activeYears.forEach(y => matrix[r.school][`${y}年`] = 0);
+      matrix[r.school]['歷年合計'] = 0;
+    }
+    matrix[r.school][`${r.year}年`] = (matrix[r.school][`${r.year}年`] || 0) + r.amount;
+    matrix[r.school]['歷年合計'] += r.amount;
+  });
+
+  const exportData = Object.values(matrix);
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, `${projectName}_交叉報表`);
+
+  XLSX.writeFile(workbook, `${projectName}_核定金額交叉報表_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportSchoolExcel() {
+  const schoolName = filterState.school.selectedSchool;
+  if (!schoolName) return;
+
+  const schoolRecords = rawRecords.filter(r => r.school === schoolName).sort((a,b) => a.year - b.year);
+
+  const exportData = schoolRecords.map(r => ({
+    '學校名稱': r.school,
+    '年度': r.year,
+    '計畫別': r.project,
+    '私校類組': r.category,
+    '核定金額': r.amount
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, `${schoolName}_歷年明細`);
+
+  XLSX.writeFile(workbook, `${schoolName}_歷年補助明細_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportSchoolCSV() {
+  const schoolName = filterState.school.selectedSchool;
+  if (!schoolName) return;
+
+  const schoolRecords = rawRecords.filter(r => r.school === schoolName).sort((a,b) => a.year - b.year);
+
+  let csvContent = "\uFEFF學校名稱,年度,計畫別,私校類組,核定金額\n";
+  schoolRecords.forEach(r => {
+    csvContent += `"${r.school}","${r.year}","${r.project}","${r.category}",${r.amount}\n`;
+  });
+
+  downloadCSV(csvContent, `${schoolName}_歷年補助明細_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function downloadCSV(csvText, filename) {
+  const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// --- Tab Navigation ---
+function switchTab(tabName) {
+  const navItems = document.querySelectorAll('.nav-item');
+  const panes = document.querySelectorAll('.tab-pane');
+
+  navItems.forEach(item => item.classList.remove('active'));
+  panes.forEach(pane => pane.classList.remove('active'));
+
+  if (tabName === 'ranking') {
+    if (navItems[0]) navItems[0].classList.add('active');
+    document.getElementById('tabPaneRanking').classList.add('active');
+    renderRankingChart();
+  } else if (tabName === 'pivot') {
+    if (navItems[1]) navItems[1].classList.add('active');
+    document.getElementById('tabPanePivot').classList.add('active');
+    renderPivotTables();
+  } else if (tabName === 'detail') {
+    if (navItems[2]) navItems[2].classList.add('active');
+    document.getElementById('tabPaneDetail').classList.add('active');
+    renderDetailTable();
+  } else if (tabName === 'school') {
+    if (navItems[3]) navItems[3].classList.add('active');
+    document.getElementById('tabPaneSchool').classList.add('active');
+    renderSchoolTrendView();
+  }
+}
+  </script>
 </body>
 </html>
